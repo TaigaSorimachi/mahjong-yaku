@@ -2,6 +2,8 @@ import { Yaku } from '../types/yaku'
 
 interface YakuCardProps {
   yaku: Yaku
+  isFavorite?: boolean
+  onToggleFavorite?: () => void
 }
 
 function getHanDisplay(yaku: Yaku): string {
@@ -34,13 +36,30 @@ function getCardBackground(yaku: Yaku): string {
   return 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
 }
 
-export function YakuCard({ yaku }: YakuCardProps) {
+export function YakuCard({ yaku, isFavorite, onToggleFavorite }: YakuCardProps) {
   const isYakuman = yaku.category === 'yakuman' || yaku.category === 'double-yakuman'
 
   return (
     <div
       className={`relative p-4 rounded-lg border shadow-sm hover:shadow-md transition-shadow ${getCardBackground(yaku)}`}
     >
+      {/* Favorite button */}
+      {onToggleFavorite && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleFavorite()
+          }}
+          className={`absolute top-3 left-3 w-7 h-7 flex items-center justify-center rounded-full transition-all ${
+            isFavorite
+              ? 'text-yellow-400 bg-yellow-50 dark:bg-yellow-900/30'
+              : 'text-gray-300 dark:text-gray-600 hover:text-yellow-400'
+          }`}
+        >
+          {isFavorite ? '★' : '☆'}
+        </button>
+      )}
+
       {/* Han badge */}
       <div
         className={`absolute top-3 right-3 px-2 py-0.5 rounded text-xs font-bold ${getBadgeColor(yaku)}`}

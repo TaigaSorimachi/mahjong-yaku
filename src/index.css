@@ -17,4 +17,9 @@
   .tile {
     @apply text-2xl sm:text-3xl tracking-wider;
   }
+
+  /* iPhoneのセーフエリア対応 */
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }

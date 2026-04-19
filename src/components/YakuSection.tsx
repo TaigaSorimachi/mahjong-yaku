@@ -4,9 +4,16 @@ import { YakuCard } from './YakuCard'
 interface YakuSectionProps {
   category: YakuCategory
   yakuList: Yaku[]
+  favorites?: string[]
+  onToggleFavorite?: (yakuId: string) => void
 }
 
-export function YakuSection({ category, yakuList }: YakuSectionProps) {
+export function YakuSection({
+  category,
+  yakuList,
+  favorites = [],
+  onToggleFavorite,
+}: YakuSectionProps) {
   const categoryInfo = YAKU_CATEGORIES.find((c) => c.id === category)
 
   if (!categoryInfo || yakuList.length === 0) {
@@ -31,7 +38,14 @@ export function YakuSection({ category, yakuList }: YakuSectionProps) {
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {yakuList.map((yaku) => (
-          <YakuCard key={yaku.id} yaku={yaku} />
+          <YakuCard
+            key={yaku.id}
+            yaku={yaku}
+            isFavorite={favorites.includes(yaku.id)}
+            onToggleFavorite={
+              onToggleFavorite ? () => onToggleFavorite(yaku.id) : undefined
+            }
+          />
         ))}
       </div>
     </section>
