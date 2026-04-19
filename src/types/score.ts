@@ -12,6 +12,30 @@ export interface GameRecord {
 export type WinType = 'tsumo' | 'ron'
 export type PlayerType = 'oya' | 'ko'
 
+// 1局の和了記録
+export interface RoundRecord {
+  id: string
+  timestamp: string
+  winner: string // 和了者
+  loser: string | null // 放銃者（ツモの場合はnull）
+  winType: WinType
+  isOya: boolean // 和了者が親か
+  han: number
+  fu: number
+  score: number // 和了点数
+  yakuList?: string[] // 役一覧（オプション）
+}
+
+// セッション（半荘）
+export interface GameSession {
+  id: string
+  startTime: string
+  endTime?: string
+  players: string[] // 4人のプレイヤー名
+  rounds: RoundRecord[] // 各局の記録
+  isActive: boolean
+}
+
 // 精算計算の設定
 export interface SettlementConfig {
   uma: [number, number, number, number] // 順位ウマ（1位, 2位, 3位, 4位）
