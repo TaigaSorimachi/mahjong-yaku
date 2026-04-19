@@ -1,85 +1,65 @@
 import { useState, useMemo } from 'react'
 import { WinType } from '../types/score'
 import { useGameSession } from '../hooks/useGameSession'
-import {
-  koRonTable,
-  koTsumoTable,
-  oyaRonTable,
-  oyaTsumoTable,
-  manganScores,
-} from '../data/scoreTable'
 
 const defaultPlayers = ['自分', 'プレイヤー2', 'プレイヤー3', 'プレイヤー4']
 
-// 点数を計算する関数
-function calculateScore(
-  han: number,
-  fu: number,
-  isOya: boolean,
-  winType: WinType
-): number {
-  if (han >= 13) {
-    return isOya
-      ? winType === 'ron'
-        ? manganScores.oya.ron.yakuman
-        : manganScores.oya.tsumo.yakuman * 3
-      : winType === 'ron'
-        ? manganScores.ko.ron.yakuman
-        : manganScores.ko.tsumo.yakuman[0] * 2 + manganScores.ko.tsumo.yakuman[1]
-  }
-  if (han >= 11) {
-    return isOya
-      ? winType === 'ron'
-        ? manganScores.oya.ron.sanbaiman
-        : manganScores.oya.tsumo.sanbaiman * 3
-      : winType === 'ron'
-        ? manganScores.ko.ron.sanbaiman
-        : manganScores.ko.tsumo.sanbaiman[0] * 2 + manganScores.ko.tsumo.sanbaiman[1]
-  }
-  if (han >= 8) {
-    return isOya
-      ? winType === 'ron'
-        ? manganScores.oya.ron.baiman
-        : manganScores.oya.tsumo.baiman * 3
-      : winType === 'ron'
-        ? manganScores.ko.ron.baiman
-        : manganScores.ko.tsumo.baiman[0] * 2 + manganScores.ko.tsumo.baiman[1]
-  }
-  if (han >= 6) {
-    return isOya
-      ? winType === 'ron'
-        ? manganScores.oya.ron.haneman
-        : manganScores.oya.tsumo.haneman * 3
-      : winType === 'ron'
-        ? manganScores.ko.ron.haneman
-        : manganScores.ko.tsumo.haneman[0] * 2 + manganScores.ko.tsumo.haneman[1]
-  }
-  if (han >= 5) {
-    return isOya
-      ? winType === 'ron'
-        ? manganScores.oya.ron.mangan
-        : manganScores.oya.tsumo.mangan * 3
-      : winType === 'ron'
-        ? manganScores.ko.ron.mangan
-        : manganScores.ko.tsumo.mangan[0] * 2 + manganScores.ko.tsumo.mangan[1]
-  }
-
-  const hanIndex = han - 1
-  if (isOya) {
-    if (winType === 'ron') {
-      return oyaRonTable[fu]?.[hanIndex] || 0
-    } else {
-      const each = oyaTsumoTable[fu]?.[hanIndex]
-      return each ? each * 3 : 0
-    }
-  } else {
-    if (winType === 'ron') {
-      return koRonTable[fu]?.[hanIndex] || 0
-    } else {
-      const tsumo = koTsumoTable[fu]?.[hanIndex]
-      return tsumo ? tsumo[0] * 2 + tsumo[1] : 0
-    }
-  }
+// よく使う点数パターン（子ロン基準）
+const commonScores = {
+  ko: {
+    ron: [
+      { label: '1翻30符', score: 1000, han: 1, fu: 30 },
+      { label: '2翻30符', score: 2000, han: 2, fu: 30 },
+      { label: '3翻30符', score: 3900, han: 3, fu: 30 },
+      { label: '4翻30符', score: 7700, han: 4, fu: 30 },
+      { label: '1翻40符', score: 1300, han: 1, fu: 40 },
+      { label: '2翻40符', score: 2600, han: 2, fu: 40 },
+      { label: '3翻40符', score: 5200, han: 3, fu: 40 },
+      { label: '満貫', score: 8000, han: 5, fu: 0 },
+      { label: '跳満', score: 12000, han: 6, fu: 0 },
+      { label: '倍満', score: 16000, han: 8, fu: 0 },
+      { label: '三倍満', score: 24000, han: 11, fu: 0 },
+      { label: '役満', score: 32000, han: 13, fu: 0 },
+    ],
+    tsumo: [
+      { label: '1翻30符', score: 1100, display: '300/500', han: 1, fu: 30 },
+      { label: '2翻30符', score: 2000, display: '500/1000', han: 2, fu: 30 },
+      { label: '3翻30符', score: 4000, display: '1000/2000', han: 3, fu: 30 },
+      { label: '4翻30符', score: 7900, display: '2000/3900', han: 4, fu: 30 },
+      { label: '満貫', score: 8000, display: '2000/4000', han: 5, fu: 0 },
+      { label: '跳満', score: 12000, display: '3000/6000', han: 6, fu: 0 },
+      { label: '倍満', score: 16000, display: '4000/8000', han: 8, fu: 0 },
+      { label: '三倍満', score: 24000, display: '6000/12000', han: 11, fu: 0 },
+      { label: '役満', score: 32000, display: '8000/16000', han: 13, fu: 0 },
+    ],
+  },
+  oya: {
+    ron: [
+      { label: '1翻30符', score: 1500, han: 1, fu: 30 },
+      { label: '2翻30符', score: 2900, han: 2, fu: 30 },
+      { label: '3翻30符', score: 5800, han: 3, fu: 30 },
+      { label: '4翻30符', score: 11600, han: 4, fu: 30 },
+      { label: '1翻40符', score: 2000, han: 1, fu: 40 },
+      { label: '2翻40符', score: 3900, han: 2, fu: 40 },
+      { label: '3翻40符', score: 7700, han: 3, fu: 40 },
+      { label: '満貫', score: 12000, han: 5, fu: 0 },
+      { label: '跳満', score: 18000, han: 6, fu: 0 },
+      { label: '倍満', score: 24000, han: 8, fu: 0 },
+      { label: '三倍満', score: 36000, han: 11, fu: 0 },
+      { label: '役満', score: 48000, han: 13, fu: 0 },
+    ],
+    tsumo: [
+      { label: '1翻30符', score: 1500, display: '500all', han: 1, fu: 30 },
+      { label: '2翻30符', score: 3000, display: '1000all', han: 2, fu: 30 },
+      { label: '3翻30符', score: 6000, display: '2000all', han: 3, fu: 30 },
+      { label: '4翻30符', score: 11700, display: '3900all', han: 4, fu: 30 },
+      { label: '満貫', score: 12000, display: '4000all', han: 5, fu: 0 },
+      { label: '跳満', score: 18000, display: '6000all', han: 6, fu: 0 },
+      { label: '倍満', score: 24000, display: '8000all', han: 8, fu: 0 },
+      { label: '三倍満', score: 36000, display: '12000all', han: 11, fu: 0 },
+      { label: '役満', score: 48000, display: '16000all', han: 13, fu: 0 },
+    ],
+  },
 }
 
 export function ScoreRecordPage() {
@@ -103,55 +83,34 @@ export function ScoreRecordPage() {
   const [loser, setLoser] = useState<string | null>(null)
   const [winType, setWinType] = useState<WinType>('ron')
   const [isOya, setIsOya] = useState(false)
-  const [han, setHan] = useState(1)
-  const [fu, setFu] = useState(30)
-  const [useManualScore, setUseManualScore] = useState(false)
-  const [manualScore, setManualScore] = useState('')
-
-  // 自動計算点数
-  const calculatedScore = useMemo(() => {
-    return calculateScore(han, fu, isOya, winType)
-  }, [han, fu, isOya, winType])
-
-  const finalScore = useManualScore
-    ? parseInt(manualScore, 10) || 0
-    : calculatedScore
 
   // 現在のスコア
   const currentScores = activeSession ? calculateScores(activeSession) : {}
 
+  // 選択可能な点数パターン
+  const scoreOptions = useMemo(() => {
+    const playerType = isOya ? 'oya' : 'ko'
+    return commonScores[playerType][winType]
+  }, [isOya, winType])
+
   const handleStartSession = () => {
     startSession(playerNames)
     setShowNewSession(false)
-    // 最初のプレイヤーを和了者に設定
     setWinner(playerNames[0])
   }
 
-  const handleAddRound = () => {
+  const handleQuickAdd = (option: (typeof scoreOptions)[0]) => {
     if (!activeSession || !winner) return
+    if (winType === 'ron' && !loser) return
 
     addRound(activeSession.id, {
       winner,
       loser: winType === 'ron' ? loser : null,
       winType,
       isOya,
-      han,
-      fu,
-      score: finalScore,
-    })
-
-    // 入力をリセット（プレイヤーは維持）
-    setHan(1)
-    setFu(30)
-    setManualScore('')
-    setUseManualScore(false)
-  }
-
-  const formatTime = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleTimeString('ja-JP', {
-      hour: '2-digit',
-      minute: '2-digit',
+      han: option.han,
+      fu: option.fu,
+      score: option.score,
     })
   }
 
@@ -178,7 +137,6 @@ export function ScoreRecordPage() {
           </button>
         </div>
 
-        {/* 過去のセッション */}
         {sessions.filter((s) => !s.isActive).length > 0 && (
           <div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">
@@ -299,83 +257,90 @@ export function ScoreRecordPage() {
     )
   }
 
-  // アクティブセッション画面
   // TypeScript null safety
   if (!activeSession) return null
+
+  const canAddRound = winner && (winType === 'tsumo' || loser)
 
   return (
     <div className="p-4 pb-24 space-y-4">
       {/* 現在のスコア */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="flex justify-between items-center mb-3">
-          <h2 className="font-bold text-gray-900 dark:text-gray-100">現在の点数</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            現在の点数
+          </span>
           <button
             onClick={() => endSession(activeSession.id)}
-            className="text-sm text-red-500 hover:text-red-600"
+            className="text-xs text-red-500 hover:text-red-600 px-2 py-1"
           >
             半荘終了
           </button>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-4 gap-1">
           {activeSession.players.map((player) => (
             <div
               key={player}
-              className="flex justify-between items-center px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg"
+              className="text-center px-1 py-2 bg-gray-50 dark:bg-gray-700 rounded"
             >
-              <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                 {player}
-              </span>
-              <span
-                className={`font-bold ${
+              </p>
+              <p
+                className={`text-sm font-bold ${
                   currentScores[player] >= 25000
                     ? 'text-mahjong-green-500'
                     : 'text-red-500'
                 }`}
               >
-                {currentScores[player]?.toLocaleString()}
-              </span>
+                {Math.round(currentScores[player] / 100) / 10}k
+              </p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* 和了入力 */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 space-y-4">
-        <h2 className="font-bold text-gray-900 dark:text-gray-100">和了を記録</h2>
-
-        {/* 和了者 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            和了者
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {activeSession.players.map((player) => (
-              <button
-                key={player}
-                onClick={() => setWinner(player)}
-                className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors truncate ${
-                  winner === player
-                    ? 'bg-mahjong-green-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                {player}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ツモ/ロン */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            和了方法
-          </label>
-          <div className="flex gap-2">
+      {/* ステップ1: 和了者 */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          ① 誰が上がった？
+        </p>
+        <div className="grid grid-cols-4 gap-2">
+          {activeSession.players.map((player) => (
             <button
-              onClick={() => setWinType('tsumo')}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+              key={player}
+              onClick={() => {
+                setWinner(player)
+                // 放銃者リセット
+                if (loser === player) setLoser(null)
+              }}
+              className={`py-3 rounded-xl text-sm font-bold transition-all ${
+                winner === player
+                  ? 'bg-mahjong-green-500 text-white scale-105 shadow-lg'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+              }`}
+            >
+              {player}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ステップ2: ツモ/ロン */}
+      {winner && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            ② ツモ？ロン？
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => {
+                setWinType('tsumo')
+                setLoser(null)
+              }}
+              className={`py-4 rounded-xl font-bold text-lg transition-all ${
                 winType === 'tsumo'
-                  ? 'bg-purple-500 text-white'
+                  ? 'bg-purple-500 text-white scale-105 shadow-lg'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
               }`}
             >
@@ -383,9 +348,9 @@ export function ScoreRecordPage() {
             </button>
             <button
               onClick={() => setWinType('ron')}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`py-4 rounded-xl font-bold text-lg transition-all ${
                 winType === 'ron'
-                  ? 'bg-orange-500 text-white'
+                  ? 'bg-orange-500 text-white scale-105 shadow-lg'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
               }`}
             >
@@ -393,44 +358,46 @@ export function ScoreRecordPage() {
             </button>
           </div>
         </div>
+      )}
 
-        {/* 放銃者（ロンの場合のみ） */}
-        {winType === 'ron' && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              放銃者
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {activeSession.players
-                .filter((p) => p !== winner)
-                .map((player) => (
-                  <button
-                    key={player}
-                    onClick={() => setLoser(player)}
-                    className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors truncate ${
-                      loser === player
-                        ? 'bg-red-500 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    {player}
-                  </button>
-                ))}
-            </div>
+      {/* ステップ3: 放銃者（ロンの場合） */}
+      {winner && winType === 'ron' && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            ③ 誰から？
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {activeSession.players
+              .filter((p) => p !== winner)
+              .map((player) => (
+                <button
+                  key={player}
+                  onClick={() => setLoser(player)}
+                  className={`py-3 rounded-xl text-sm font-bold transition-all ${
+                    loser === player
+                      ? 'bg-red-500 text-white scale-105 shadow-lg'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  {player}
+                </button>
+              ))}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* 親/子 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            和了者
-          </label>
-          <div className="flex gap-2">
+      {/* ステップ4: 親/子 */}
+      {canAddRound && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            ④ 和了者は親？子？
+          </p>
+          <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => setIsOya(false)}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`py-3 rounded-xl font-bold transition-all ${
                 !isOya
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-blue-500 text-white scale-105 shadow-lg'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
               }`}
             >
@@ -438,9 +405,9 @@ export function ScoreRecordPage() {
             </button>
             <button
               onClick={() => setIsOya(true)}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`py-3 rounded-xl font-bold transition-all ${
                 isOya
-                  ? 'bg-red-500 text-white'
+                  ? 'bg-red-500 text-white scale-105 shadow-lg'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
               }`}
             >
@@ -448,118 +415,49 @@ export function ScoreRecordPage() {
             </button>
           </div>
         </div>
+      )}
 
-        {/* 翻数 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            翻数
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 11, 13].map((h) => (
+      {/* ステップ5: 点数選択（ワンタップ） */}
+      {canAddRound && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            ⑤ 点数をタップで記録
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {scoreOptions.map((option) => (
               <button
-                key={h}
-                onClick={() => setHan(h)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  han === h
-                    ? 'bg-mahjong-green-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                }`}
+                key={option.label}
+                onClick={() => handleQuickAdd(option)}
+                className="py-3 px-2 bg-gradient-to-br from-mahjong-green-400 to-mahjong-green-600 text-white rounded-xl font-medium transition-all hover:scale-105 hover:shadow-lg active:scale-95"
               >
-                {h === 5
-                  ? '満貫'
-                  : h === 6
-                    ? '跳満'
-                    : h === 8
-                      ? '倍満'
-                      : h === 11
-                        ? '三倍満'
-                        : h === 13
-                          ? '役満'
-                          : `${h}翻`}
+                <p className="text-xs opacity-80">{option.label}</p>
+                <p className="text-lg font-bold">
+                  {option.score >= 10000
+                    ? `${option.score / 1000}k`
+                    : option.score.toLocaleString()}
+                </p>
+                {'display' in option && (
+                  <p className="text-xs opacity-70">{option.display}</p>
+                )}
               </button>
             ))}
           </div>
         </div>
-
-        {/* 符（5翻未満のみ） */}
-        {han < 5 && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              符
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {[20, 25, 30, 40, 50, 60, 70].map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFu(f)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    fu === f
-                      ? 'bg-mahjong-green-500 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  {f}符
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 点数表示 */}
-        <div className="bg-gray-100 dark:bg-gray-700 rounded-xl p-4 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">和了点数</p>
-          {useManualScore ? (
-            <input
-              type="number"
-              value={manualScore}
-              onChange={(e) => setManualScore(e.target.value)}
-              placeholder="点数を入力"
-              className="w-full text-center text-2xl font-bold bg-white dark:bg-gray-800 rounded-lg py-2 border border-gray-300 dark:border-gray-600"
-            />
-          ) : (
-            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              {calculatedScore > 0 ? (
-                <>
-                  {calculatedScore.toLocaleString()}
-                  <span className="text-lg ml-1">点</span>
-                </>
-              ) : (
-                <span className="text-red-500">計算不可</span>
-              )}
-            </p>
-          )}
-          <button
-            onClick={() => setUseManualScore(!useManualScore)}
-            className="mt-2 text-sm text-mahjong-green-500 hover:text-mahjong-green-600"
-          >
-            {useManualScore ? '自動計算に戻す' : '手動で入力'}
-          </button>
-        </div>
-
-        {/* 記録ボタン */}
-        <button
-          onClick={handleAddRound}
-          disabled={!winner || (winType === 'ron' && !loser) || finalScore === 0}
-          className="w-full py-3 bg-mahjong-green-500 text-white rounded-xl font-bold text-lg hover:bg-mahjong-green-600 disabled:bg-gray-300 disabled:text-gray-500 transition-colors"
-        >
-          和了を記録
-        </button>
-      </div>
+      )}
 
       {/* 履歴 */}
       {activeSession.rounds.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-          <h2 className="font-bold text-gray-900 dark:text-gray-100 mb-3">
-            今半荘の和了 ({activeSession.rounds.length}局)
-          </h2>
-          <div className="space-y-2">
-            {[...activeSession.rounds].reverse().map((round) => (
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+            今半荘の記録 ({activeSession.rounds.length}局)
+          </h3>
+          <div className="space-y-1">
+            {[...activeSession.rounds].reverse().slice(0, 5).map((round) => (
               <div
                 key={round.id}
-                className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm"
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-xs text-gray-400">{formatTime(round.timestamp)}</span>
+                <div className="flex items-center gap-2">
                   <span
                     className={`px-1.5 py-0.5 rounded text-xs font-medium ${
                       round.winType === 'tsumo'
@@ -569,33 +467,32 @@ export function ScoreRecordPage() {
                   >
                     {round.winType === 'tsumo' ? 'ツモ' : 'ロン'}
                   </span>
-                  <span className="text-sm truncate">
-                    <span className="font-medium text-mahjong-green-500">{round.winner}</span>
-                    {round.loser && (
-                      <>
-                        <span className="text-gray-400 mx-1">←</span>
-                        <span className="text-red-500">{round.loser}</span>
-                      </>
-                    )}
+                  <span className="font-medium text-mahjong-green-600 dark:text-mahjong-green-400">
+                    {round.winner}
                   </span>
+                  {round.loser && (
+                    <>
+                      <span className="text-gray-400">←</span>
+                      <span className="text-red-500">{round.loser}</span>
+                    </>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {round.han}翻
-                    {round.han < 5 && `${round.fu}符`}
-                  </span>
-                  <span className="font-bold text-sm">
-                    {round.score.toLocaleString()}
-                  </span>
+                  <span className="font-bold">{round.score.toLocaleString()}</span>
                   <button
                     onClick={() => deleteRound(activeSession.id, round.id)}
-                    className="text-red-400 hover:text-red-500 text-xs"
+                    className="text-gray-400 hover:text-red-500"
                   >
                     ✕
                   </button>
                 </div>
               </div>
             ))}
+            {activeSession.rounds.length > 5 && (
+              <p className="text-center text-xs text-gray-400 py-1">
+                他 {activeSession.rounds.length - 5} 件...
+              </p>
+            )}
           </div>
         </div>
       )}
