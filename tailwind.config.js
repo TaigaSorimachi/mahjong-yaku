@@ -1,0 +1,65 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'mahjong-green': {
+          50: '#f0fdf4',
+          100: '#dcfce7',
+          200: '#bbf7d0',
+          300: '#86efac',
+          400: '#4ade80',
+          500: '#2d7a4f',
+          600: '#256941',
+          700: '#1d5433',
+          800: '#153f26',
+          900: '#0d2a19',
+        },
+        'mahjong-red': {
+          50: '#fef2f2',
+          100: '#fee2e2',
+          200: '#fecaca',
+          300: '#fca5a5',
+          400: '#f87171',
+          500: '#c0392b',
+          600: '#a33225',
+          700: '#862a1f',
+          800: '#6a2119',
+          900: '#4e1812',
+        },
+        'yakuman-gold': {
+          50: '#fdf6e3',
+          100: '#faecc7',
+          200: '#f5d88f',
+          300: '#efc557',
+          400: '#e9b11f',
+          500: '#d49e1a',
+          600: '#b38315',
+          700: '#926810',
+          800: '#714d0b',
+          900: '#503206',
+        },
+      },
+      fontFamily: {
+        sans: [
+          '"Hiragino Sans"',
+          '"Noto Sans JP"',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"Segoe UI"',
+          'Roboto',
+          '"Helvetica Neue"',
+          'Arial',
+          'sans-serif',
+        ],
+      },
+    },
+  },
+  plugins: [],
+}
